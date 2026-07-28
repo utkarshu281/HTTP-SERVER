@@ -54,9 +54,4 @@ public class ClientHandler {
         httpValue.forEach((key,value)-> System.out.println(key+":"+value));
         httpValue.clear();
     }
-//    public void handlingArray(ArrayList<String> lines){
-//        for(String line:lines){
-//
-//        }
-//    }
 }
