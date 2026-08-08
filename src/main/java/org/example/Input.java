@@ -17,7 +17,7 @@ public class Input implements Runnable {
     @CommandLine.Option(names="--dir",description = "path to file")
     public String directory;
     @Override
-    public void run() {
+    public void    run() {
         try {
             httpServerObject.initializeServer(port,directory,clientHandler);
         } catch (IOException e) {
