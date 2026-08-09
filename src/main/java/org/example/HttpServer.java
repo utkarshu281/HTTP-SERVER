@@ -1,6 +1,7 @@
 package org.example;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
@@ -18,8 +19,7 @@ public class HttpServer {
         server.close();
     }
     public void serverListening(ServerSocket server, int port,ClientHandler clientHandler){
-        boolean isFalse=false;
-        while(!isFalse){
+        while(true){
             try {
                 System.out.println("server is listening on port "+port);
                 Socket clientSocket = server.accept();
@@ -29,7 +29,9 @@ public class HttpServer {
                     String message=reader.readLine();
                     System.out.println("Received: "+message); */
                     Scanner scanner = new Scanner(new InputStreamReader(clientSocket.getInputStream()));
-                    clientHandler.parsing(scanner,clientSocket);
+                    int statusCode=clientHandler.parsing(scanner,clientSocket);
+                    PrintWriter output = new PrintWriter(clientSocket.getOutputStream(),true);
+                   clientHandler.serverOutput(output,statusCode);
 
             } catch (IOException e) {
                 throw new RuntimeException(e);

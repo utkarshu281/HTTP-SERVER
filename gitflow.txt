@@ -1,0 +1,17 @@
+# Start feature
+git switch -c feature
+
+# Work
+git add .
+git commit -m "..."
+git push -u origin feature
+
+# Finished
+git switch main
+git pull origin main
+git merge feature
+git push origin main
+
+# Cleanup
+git branch -d feature
+git push origin --delete feature
