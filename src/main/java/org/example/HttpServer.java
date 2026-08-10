@@ -14,11 +14,11 @@ public class HttpServer {
             throw new RuntimeException(e);
         }
         System.out.println("server is started....");
-        serverListening(server,port,clientHandler);
+        serverListening(server,port,clientHandler,directory);
         System.out.print("Server is closed.....");
         server.close();
     }
-    public void serverListening(ServerSocket server, int port,ClientHandler clientHandler){
+    public void serverListening(ServerSocket server, int port,ClientHandler clientHandler,String directory){
         while(true){
             try {
                 System.out.println("server is listening on port "+port);
@@ -31,7 +31,7 @@ public class HttpServer {
                     Scanner scanner = new Scanner(new InputStreamReader(clientSocket.getInputStream()));
                     int statusCode=clientHandler.parsing(scanner,clientSocket);
                     PrintWriter output = new PrintWriter(clientSocket.getOutputStream(),true);
-                   clientHandler.serverOutput(output,statusCode);
+                   clientHandler.serverHandlingOutput(output,statusCode,directory);
 
             } catch (IOException e) {
                 throw new RuntimeException(e);

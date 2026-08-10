@@ -8,6 +8,7 @@ import java.io.IOException;
 public class Input implements Runnable {
     HttpServer httpServerObject;
     ClientHandler clientHandler;
+    FileHandling fileHandler;
     Input(HttpServer httpServer,ClientHandler clientHandler){
         this.httpServerObject = httpServer;
         this.clientHandler=clientHandler;
