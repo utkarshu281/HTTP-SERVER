@@ -9,9 +9,12 @@ import java.util.*;
 public class ClientHandler {
     HashMap<String,String> httpValue;
     ArrayList<String> arr;
+    String fileName;
+    FileHandling fileHandler;
     ClientHandler(){
         httpValue=new HashMap<>();
         arr=new ArrayList<>();
+        fileHandler=new FileHandling();
     }
     public int parsing(Scanner scanner, Socket clientSocket){
         //String[] arr = new String[30];
@@ -26,6 +29,7 @@ public class ClientHandler {
     }
     public int parsingMethod(ArrayList<String> arr){
         String[] arrOfMethods=arr.get(0).split(" ");
+        fileName=arrOfMethods[1];
         parsingBody(arr);
         return switch (arrOfMethods[0]) {
             case "GET" -> 200;
@@ -48,9 +52,7 @@ public class ClientHandler {
         httpValue.forEach((key,value)-> out.println(key+":"+value));
         httpValue.clear();
     }
-    public void serverOutput(PrintWriter output,int statusCode){
-        String content="Hello from java HTTP server developed by utkarsh upadhyay\n";
-        int contentLength=content.length();
+    public void serverHandlingOutput(PrintWriter output,int statusCode,String dir){
         String response;
         if(statusCode==200){
             response="OK";
@@ -62,10 +64,22 @@ public class ClientHandler {
             response="Not Found";
             output.printf("HTTP/1.1 %d %s\r\n",statusCode,response);
         }
-        output.printf("Content-Type: text/plain\r\n");
-        output.printf("Content-Length: %d\r\n",contentLength);
-        //a mandatory blank line to separate headers from the body
-        output.print("\r\n");
-        output.print(content);
+        int contentLength= fileHandler.readingFileContentsAndLength(fileName);
+       if(contentLength!=-1){
+           output.printf("Content-Type: text/plain\r\n");
+           output.printf("Content-Length: %d\r\n",contentLength);
+           //a mandatory blank line to separate headers from the body
+           output.print("\r\n");
+           ArrayList<String> contentsOfFile = fileHandler.returngContent();
+           for(String str:contentsOfFile){
+               output.println(str);
+           }
+       }else{
+           output.printf("Content-Type: text/plain\r\n");
+           output.printf("Content-Length: %d\r\n",0);
+           //a mandatory blank line to separate headers from the body
+           output.print("\r\n");
+           output.println("404 file does not exist");
+       }
     }
 }
