@@ -1,5 +1,4 @@
 package org.example;
-import java.io.Console;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.*;
@@ -8,6 +7,13 @@ public class ClientHandler {
     Map<String, String> httpValue;
     List<String> arr;
     FileHandling fileHandler;
+    private final Map<String, String> mimeTypes = Map.of(
+            ".html", "text/html",
+            ".css", "text/css",
+            ".js", "application/javascript",
+            ".txt", "text/plain",
+            ".json", "application/json"
+    );
 
     ClientHandler() {
         httpValue = new HashMap<>();
@@ -54,7 +60,7 @@ public class ClientHandler {
         return handler.apply(method, fileName);
     }
 
-    public void parsingBody(List<String> arr) {
+    public void parsingHeader(List<String> arr) {
         for (int i = 1; i < arr.size(); i++) {
             if (arr.get(i).trim().isEmpty()) {
                 continue;
@@ -70,32 +76,59 @@ public class ClientHandler {
 //        httpValue.clear();
 //    }
     public void serverHandlingResponse(PrintWriter output, int statusCode, FileHandling fileHandler, List<String> arr, String fileName) {
-        String response;
+        String response="";
+        String body="";
+        String contentType=findContentType(fileName);
+        parsingHeader(arr);
         switch (statusCode) {
-            case 200:
-                parsingBody(arr);
-                serverOutput(output,fileHandler,fileName);
-                break;
-            case 405:
-                response = "Method Not Allowed";
-                output.printf("HTTP/1.1 %d %s\r\n", statusCode, response);
-                break;
-            case 404:
-                response = "Not Found";
-                output.printf("HTTP/1.1 %d %s\r\n", statusCode, response);
+            case 200 -> {
+                body=fileHandler.returnContentFromFile(fileName);
+                response="OK";
+                //serverOutput(output,fileHandler,fileName);
+            }
+            case 405 -> {
+                body="Method Not Allowed";
+                response=body;
+            }
+            case 404 -> {
+                body="Not Found";
+                response=body;
+            }
         }
+        writeResponse(output,body,statusCode,response,contentType);
+    }
+    public String findContentType(String fileName){
+        int dotIndex = fileName.lastIndexOf(".");
+        if (dotIndex == -1) {
+            return "application/octet-stream";
+        }
+
+        String extension = fileName.substring(dotIndex).toLowerCase();
+
+        return mimeTypes.getOrDefault(
+                extension,
+                "application/octet-stream"
+        );
     }
 
-    public void serverOutput(PrintWriter output, FileHandling fileHandler, String fileName) {
-        int contentLength = fileHandler.readingFileContentsAndLength(fileName);
-            output.printf("HTTP/1.1 %d %s\r\n", 200, "OK");
-            output.printf("Content-Type: text/plain\r\n");
-            output.printf("Content-Length: %d\r\n", contentLength);
-            //a mandatory blank line to separate headers from the body
+//    public void serverOutput(PrintWriter output, FileHandling fileHandler, String fileName) {
+//        int contentLength = fileHandler.readingFileContentsAndLength(fileName);
+//            output.printf("HTTP/1.1 %d %s\r\n", 200, "OK");
+//            output.printf("Content-Type: text/plain\r\n");
+//            output.printf("Content-Length: %d\r\n", contentLength);
+//            //a mandatory blank line to separate headers from the body
+//            output.print("\r\n");
+//            ArrayList<String> contentsOfFile = fileHandler.returngContent();
+//            for (String str : contentsOfFile) {
+//                output.println(str);
+//            }
+//    }
+    public void writeResponse(PrintWriter output,String body, int statusCode,String response,String contentType){
+            output.printf("HTTP/1.1 %d %s\r\n",statusCode, response);
+            output.printf("Content-Type: %s\r\n",contentType);
+            output.printf("Content-Length: %d\r\n", body.length()+1);
             output.print("\r\n");
-            ArrayList<String> contentsOfFile = fileHandler.returngContent();
-            for (String str : contentsOfFile) {
-                output.println(str);
-            }
+            output.printf("%s\n",body);
+            //output.flush();
     }
 }
