@@ -1,85 +1,101 @@
 package org.example;
-
-import com.fasterxml.jackson.databind.JsonSerializable;
-
+import java.io.Console;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.*;
-
+import java.util.function.BiFunction;
 public class ClientHandler {
-    HashMap<String,String> httpValue;
-    ArrayList<String> arr;
-    String fileName;
+    Map<String, String> httpValue;
+    List<String> arr;
     FileHandling fileHandler;
-    ClientHandler(){
-        httpValue=new HashMap<>();
-        arr=new ArrayList<>();
-        fileHandler=new FileHandling();
+
+    ClientHandler() {
+        httpValue = new HashMap<>();
+        arr = new ArrayList<>();
     }
-    public int parsing(Scanner scanner, Socket clientSocket){
+
+    public void parsing(Scanner scanner, Socket clientSocket, FileHandling fileHandler, PrintWriter outPut) {
+        this.fileHandler = fileHandler;
         //String[] arr = new String[30];
-        while(scanner.hasNextLine()){
+        while (scanner.hasNextLine()) {
             String message = scanner.nextLine();
-            if(message.isEmpty())break;
+            if (message.isEmpty()) break;
             arr.add(message);
         }
-        int statusCode=parsingMethod(arr);
+        parsingMethod(arr, outPut, fileHandler);
         arr.clear();
-        return statusCode;
     }
-    public int parsingMethod(ArrayList<String> arr){
-        String[] arrOfMethods=arr.get(0).split(" ");
-        fileName=arrOfMethods[1];
-        parsingBody(arr);
-        return switch (arrOfMethods[0]) {
-            case "GET" -> 200;
-            case "POST" -> 405;
-            case "DELETE" -> 405;
-            default -> 404;
+
+    public void parsingMethod(List<String> arr, PrintWriter output, FileHandling fileHandler) {
+        String[] arrOfMethods = arr.get(0).split(" ");
+        String fileName = arrOfMethods[1];
+        int statusCode = handleRequest(arrOfMethods, fileName);
+        serverHandlingResponse(output, statusCode, fileHandler, arr, fileName);
+    }
+
+    public enum HttpMethod {
+        GET, POST, DELETE, PUT, PATCH
+    }
+
+    public int handleRequest(String[] arrayOfMethods, String fileName) {
+        HttpMethod method = HttpMethod.valueOf(arrayOfMethods[0]);
+        BiFunction<HttpMethod, String, Integer> handler = (m, nameOfFile) -> {
+            switch (m) {
+                case GET:
+                    boolean fileExistOrNot = fileHandler.fileExistOrNot(nameOfFile);
+                    if (fileExistOrNot) return 200;
+                    return 404;
+                case POST, DELETE, PUT, PATCH:
+                    return 405;
+                default:
+                    return 404;
+            }
         };
+        return handler.apply(method, fileName);
     }
-    public void parsingBody(ArrayList<String> arr){
-        for(int i=1;i<arr.size();i++){
+
+    public void parsingBody(List<String> arr) {
+        for (int i = 1; i < arr.size(); i++) {
             if (arr.get(i).trim().isEmpty()) {
                 continue;
             }
-            String[] parsingArr=arr.get(i).split(":",2);
-            httpValue.put(parsingArr[0],parsingArr[1]);
+            String[] parsingArr = arr.get(i).split(":", 2);
+            httpValue.put(parsingArr[0], parsingArr[1]);
         }
         //printingValue();
     }
-    public void printingValue(PrintWriter out){
-        httpValue.forEach((key,value)-> out.println(key+":"+value));
-        httpValue.clear();
-    }
-    public void serverHandlingOutput(PrintWriter output,int statusCode,String dir){
+
+    //    public void printingValue(PrintWriter out){
+//        httpValue.forEach((key,value)-> out.println(key+":"+value));
+//        httpValue.clear();
+//    }
+    public void serverHandlingResponse(PrintWriter output, int statusCode, FileHandling fileHandler, List<String> arr, String fileName) {
         String response;
-        if(statusCode==200){
-            response="OK";
-            output.printf("HTTP/1.1 %d %s\r\n",statusCode,response);
-        } else if (statusCode==405) {
-            response="Method Not Allowed";
-            output.printf("HTTP/1.1 %d %s\r\n",statusCode,response);
-        } else if (statusCode==404) {
-            response="Not Found";
-            output.printf("HTTP/1.1 %d %s\r\n",statusCode,response);
+        switch (statusCode) {
+            case 200:
+                parsingBody(arr);
+                serverOutput(output,fileHandler,fileName);
+                break;
+            case 405:
+                response = "Method Not Allowed";
+                output.printf("HTTP/1.1 %d %s\r\n", statusCode, response);
+                break;
+            case 404:
+                response = "Not Found";
+                output.printf("HTTP/1.1 %d %s\r\n", statusCode, response);
         }
-        int contentLength= fileHandler.readingFileContentsAndLength(fileName);
-       if(contentLength!=-1){
-           output.printf("Content-Type: text/plain\r\n");
-           output.printf("Content-Length: %d\r\n",contentLength);
-           //a mandatory blank line to separate headers from the body
-           output.print("\r\n");
-           ArrayList<String> contentsOfFile = fileHandler.returngContent();
-           for(String str:contentsOfFile){
-               output.println(str);
-           }
-       }else{
-           output.printf("Content-Type: text/plain\r\n");
-           output.printf("Content-Length: %d\r\n",0);
-           //a mandatory blank line to separate headers from the body
-           output.print("\r\n");
-           output.println("404 file does not exist");
-       }
+    }
+
+    public void serverOutput(PrintWriter output, FileHandling fileHandler, String fileName) {
+        int contentLength = fileHandler.readingFileContentsAndLength(fileName);
+            output.printf("HTTP/1.1 %d %s\r\n", 200, "OK");
+            output.printf("Content-Type: text/plain\r\n");
+            output.printf("Content-Length: %d\r\n", contentLength);
+            //a mandatory blank line to separate headers from the body
+            output.print("\r\n");
+            ArrayList<String> contentsOfFile = fileHandler.returngContent();
+            for (String str : contentsOfFile) {
+                output.println(str);
+            }
     }
 }

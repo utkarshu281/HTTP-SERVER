@@ -6,12 +6,18 @@ import java.util.ArrayList;
 public class FileHandling {
     Path dir;
     ArrayList<String> fileReader;
-    FileHandling(){
-        dir =  Paths.get("www");
+    FileHandling(String path){
+        dir =  Paths.get(path);
         fileReader=new ArrayList<>();
     }
+    public boolean fileExistOrNot(String fileName){
+        if (fileName.startsWith("/")) {
+            fileName = fileName.substring(1);
+        }
+        Path file = dir.resolve(fileName);
+        return Files.exists(file);
+    }
     public int readingFileContentsAndLength(String filename){
-        int statuCode=0;
         if (filename.startsWith("/")) {
             filename = filename.substring(1);
         }
@@ -23,11 +29,8 @@ public class FileHandling {
                 lengthOfContent=lengthOfContent+currrentLine.length();
                 fileReader.add(currrentLine);
             }
-        } catch (FileNotFoundException e) {
-            return -1;//denotes that there is some problem with program
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }finally {
         }
         return lengthOfContent;
     }
