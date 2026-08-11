@@ -12,19 +12,34 @@ public class FileHandling {
         fileReader=new ArrayList<>();
         content = new StringBuilder();
     }
-    public boolean fileExistOrNot(String fileName){
-        if (fileName.startsWith("/")) {
-            fileName = fileName.substring(1);
+    public boolean fileCheckInDirectory(String fileName){
+        Path documentRoot = dir.normalize();
+        Path requestedPath = dir.resolve(fileName).normalize();
+        if (requestedPath.startsWith(documentRoot)) {
+            return true;
         }
-        Path file = dir.resolve(fileName);
-        return Files.exists(file);
+        return false;
     }
-    public void readingFileContents(String filename){
-        content.setLength(0);
-        if (filename.startsWith("/")) {
-            filename = filename.substring(1);
+    public boolean fileExistOrNot(String fileName){
+            boolean check = fileCheckInDirectory(fileName);
+           if(check){
+               Path cleanPath=cleaningPath(fileName);
+               return Files.exists(cleanPath);
+           }
+           return false;
+    }
+    public Path cleaningPath(String fileName){
+        if(fileName.startsWith("/") && fileName.length()>1){
+            fileName = fileName.substring(1);
+            Path rawPath = dir.resolve(fileName);
+            return rawPath.normalize();
         }
-        File fileToRead= dir.resolve(filename).toFile();
+        Path rawPath = dir.resolve("index.html"); ///default for /
+        return rawPath.normalize();
+    }
+    public void readingFileContents(Path pathToFile){
+        content.setLength(0);
+       File fileToRead = pathToFile.toFile();
         try(BufferedReader reader = new BufferedReader(new FileReader(fileToRead))){
             String currrentLine;
             while((currrentLine=reader.readLine())!=null){
@@ -40,7 +55,8 @@ public class FileHandling {
         return fileReader;
     }
     public String returnContentFromFile(String fileName){
-        readingFileContents(fileName);
+        Path cleanPath = cleaningPath(fileName);
+        readingFileContents(cleanPath);
         return content.toString();}
 
 }
