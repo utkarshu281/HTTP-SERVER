@@ -1,4 +1,5 @@
 package org.example;
+import javax.swing.text.html.HTML;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.*;
@@ -34,9 +35,53 @@ public class ClientHandler {
 
     public void parsingMethod(List<String> arr, PrintWriter output, FileHandling fileHandler) {
         String[] arrOfMethods = arr.get(0).split(" ");
-        String fileName = arrOfMethods[1];
-        int statusCode = handleRequest(arrOfMethods, fileName);
-        serverHandlingResponse(output, statusCode, fileHandler, arr, fileName);
+        boolean requestValidateAnswer=validatingRequest(arrOfMethods);
+        if(requestValidateAnswer){
+            String fileName = arrOfMethods[1];
+            int statusCode = handleRequest(arrOfMethods, fileName);
+            serverHandlingResponse(output, statusCode, fileHandler, arr, fileName);
+        }else{
+            int statusCode=400;
+            String fileName="";
+            serverHandlingResponse(output,statusCode,fileHandler,arr,fileName);
+        }
+    }
+    public boolean validatingRequest( String[] arrOfMethods){
+        // METHOD FILE_NAME HTTP_TYPE
+        String[] arrMethods=arrOfMethods; //pointing at same object
+        if(!(arrMethods.length>3 || arrMethods.length<3)){
+            try{
+                HttpMethod method = HttpMethod.valueOf(arrMethods[0]);
+                String File = arrMethods[1];
+                String httpType=arrMethods[2];
+                boolean enumCheck=false;
+                boolean fileCheck=false;
+                for(HttpMethod m : HttpMethod.values()){
+                    enumCheck=false;
+                    if(method==m){
+                        enumCheck=true;
+                    }
+                    if(enumCheck)break;
+                }
+                if(enumCheck){
+                    if(!(File.isEmpty()))fileCheck=true;
+                    if(fileCheck){
+                        if(httpType.equals("HTTP/1.1")){
+                            return true;
+                        }else{
+                            return false;
+                        }
+                    }else{
+                        return false;
+                    }
+                }else{
+                    return false;
+                }
+            } catch (Exception e) {
+
+            }
+        }
+            return false;
     }
 
     public enum HttpMethod {
@@ -96,6 +141,10 @@ public class ClientHandler {
             }
             case 404 -> {
                 body="Not Found";
+                response=body;
+            }
+            case 400->{
+                body="bad request";
                 response=body;
             }
         }
