@@ -13,20 +13,16 @@ public class FileHandling {
         content = new StringBuilder();
     }
     public boolean fileCheckInDirectory(String fileName){
+        Path requestedPath = cleaningPath(fileName);
         Path documentRoot = dir.normalize();
-        Path requestedPath = dir.resolve(fileName).normalize();
-        if (requestedPath.startsWith(documentRoot)) {
-            return true;
+        return requestedPath.startsWith(documentRoot);
+    }
+    public boolean fileExistOrNot(String fileName) {
+        Path cleanPath = cleaningPath(fileName);
+        if (fileCheckInDirectory(fileName)) {
+            return Files.exists(cleanPath);
         }
         return false;
-    }
-    public boolean fileExistOrNot(String fileName){
-            boolean check = fileCheckInDirectory(fileName);
-           if(check){
-               Path cleanPath=cleaningPath(fileName);
-               return Files.exists(cleanPath);
-           }
-           return false;
     }
     public Path cleaningPath(String fileName){
         if(fileName.startsWith("/") && fileName.length()>1){
@@ -34,11 +30,12 @@ public class FileHandling {
             Path rawPath = dir.resolve(fileName);
             return rawPath.normalize();
         }
-        Path rawPath = dir.resolve("index.html"); ///default for /
+        Path rawPath = dir.resolve("index.html"); //default for /
         return rawPath.normalize();
     }
     public void readingFileContents(Path pathToFile){
         content.setLength(0);
+        fileReader.clear();
        File fileToRead = pathToFile.toFile();
         try(BufferedReader reader = new BufferedReader(new FileReader(fileToRead))){
             String currrentLine;
