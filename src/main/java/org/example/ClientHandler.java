@@ -44,20 +44,24 @@ public class ClientHandler {
     }
 
     public int handleRequest(String[] arrayOfMethods, String fileName) {
-        HttpMethod method = HttpMethod.valueOf(arrayOfMethods[0]);
-        BiFunction<HttpMethod, String, Integer> handler = (m, nameOfFile) -> {
-            switch (m) {
-                case GET:
-                    boolean fileExistOrNot = fileHandler.fileExistOrNot(nameOfFile);
-                    if (fileExistOrNot) return 200;
-                    return 404;
-                case POST, DELETE, PUT, PATCH:
-                    return 405;
-                default:
-                    return 404;
-            }
-        };
-        return handler.apply(method, fileName);
+        try{
+            HttpMethod method = HttpMethod.valueOf(arrayOfMethods[0]);
+            BiFunction<HttpMethod, String, Integer> handler = (m, nameOfFile) -> {
+                switch (m) {
+                    case GET:
+                        boolean fileExistOrNot = fileHandler.fileExistOrNot(nameOfFile);
+                        if (fileExistOrNot) return 200;
+                        return 404;
+                    case POST, DELETE, PUT, PATCH:
+                        return 405;
+                    default:
+                        return 404;
+                }
+            };
+            return handler.apply(method, fileName);
+        } catch (Exception e) {
+            return 404;
+        }
     }
 
     public void parsingHeader(List<String> arr) {
