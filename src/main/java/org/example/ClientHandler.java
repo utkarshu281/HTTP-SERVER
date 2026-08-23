@@ -148,7 +148,10 @@ public class ClientHandler {
             return 404;
           case POST:
             return 201;
-          case DELETE, PUT, PATCH:
+          case DELETE:
+            boolean fileExist = fileHandler.fileExistOrNot(fileName);
+            return fileExist ? 204 : 404;
+          case  PUT, PATCH:
             return 405;
           default:
             return 404;
@@ -186,13 +189,13 @@ public class ClientHandler {
         requestRouter.handlePOST(writer,fileOperation, fileName, requestBody);
         break;
       case PUT:
-        requestRouter.handlePUT(writer,fileOperation, fileName);
+        //requestRouter.handlePUT(writer,fileOperation, fileName); //for future update
         break;
       case DELETE:
         requestRouter.handleDELETE(writer,fileOperation, fileName);
         break;
       case PATCH:
-        requestRouter.handlePATCH(writer,fileOperation, fileName);
+        //requestRouter.handlePATCH(writer,fileOperation, fileName); //for future update
         break;
       default:
         break; /// this case will nevere happen due to the previous checking
@@ -212,6 +215,9 @@ public class ClientHandler {
       }
       case 201 ->{
         methodHandling(output,method, fileHandler, fileName, requestBody);
+      }
+      case 204 -> {
+        methodHandling(output, method, fileHandler, fileName, requestBody);
       }
       case 405 -> {
         body = "Method Not Allowed";

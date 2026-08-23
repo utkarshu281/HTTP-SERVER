@@ -4,6 +4,8 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.ArrayList;
 
+import javax.management.RuntimeErrorException;
+
 public class FileHandling {
   Path dir;
   ArrayList<String> fileReader;
@@ -66,6 +68,18 @@ public class FileHandling {
     }catch(IOException e){
       throw new RuntimeException(e);  
     }    
+  }
+  public boolean deleteFile(String fileName){
+    Path pathToDeleteFile = cleaningPath(fileName);
+    try{
+      Files.delete(pathToDeleteFile);
+      boolean fileExist = fileExistOrNot(fileName);
+      return fileExist ? false : true; //ternary operator:-(condition)? (value if true):(value if false)
+    }catch(NoSuchFileException e){
+      return false;
+    }catch(IOException e){
+      throw new RuntimeException(e);
+    }
   }
 
   public ArrayList<String> returngContent() {
