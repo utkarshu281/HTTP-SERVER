@@ -9,8 +9,11 @@ import java.util.Scanner;
 import java.io.*;
 
 public class HttpServer {
+  PrintWriter output;
+  BufferedReader reader;
+
   public void initializeServer(int port, String directory, ClientHandler clientHandler) throws IOException {
-    FileHandling fileHandler = new FileHandling(directory);
+    FileHandling fileHandler = new FileHandling(directory, output);
     ServerSocket server;
     try {
       server = new ServerSocket(port);
@@ -30,9 +33,9 @@ public class HttpServer {
         System.out.println("server is listening on port " + port);
         Socket clientSocket = server.accept();
         /* I have left this comment, the reason another way to read the client input */
-        BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         Scanner scanner = new Scanner(new InputStreamReader(clientSocket.getInputStream()));
-        PrintWriter output = new PrintWriter(clientSocket.getOutputStream(), true);
+        output = new PrintWriter(clientSocket.getOutputStream(), true);
         clientHandler.parsing(scanner, clientSocket, fileHandler, output, reader);
 
       } catch (IOException e) {

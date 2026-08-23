@@ -8,11 +8,13 @@ public class FileHandling {
   Path dir;
   ArrayList<String> fileReader;
   StringBuilder content;
+  PrintWriter writer;
 
-  FileHandling(String path) {
+  FileHandling(String path,PrintWriter output) {
     dir = Paths.get(path);
     fileReader = new ArrayList<>();
     content = new StringBuilder();
+    writer=output;
   }
 
   public boolean fileCheckInDirectory(String fileName) {
@@ -53,6 +55,17 @@ public class FileHandling {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+  public boolean writeFile(String fileName,String requestBody){
+    Path cleanPath = cleaningPath(fileName);
+    try{
+       Files.createDirectories(cleanPath.getParent());
+       Files.writeString(cleanPath,requestBody);
+       if(fileExistOrNot(fileName))return true;
+       return false;
+    }catch(IOException e){
+      throw new RuntimeException(e);  
+    }    
   }
 
   public ArrayList<String> returngContent() {

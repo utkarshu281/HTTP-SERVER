@@ -12,7 +12,7 @@ public class ClientHandler {
   List<String> arr;
   FileHandling fileHandler;
   MethodHandler requestRouter = new MethodHandler();
-  private final Map<String, String> mimeTypes = Map.of(
+ public static final Map<String, String> MIME_TYPES = Map.of(
       ".html", "text/html",
       ".css", "text/css",
       ".js", "application/javascript",
@@ -72,7 +72,6 @@ public class ClientHandler {
       }
     }
     String requestBody = new String(body);
-    System.out.println(requestBody);
     parsingMethod(arr, outPut, fileHandler, requestBody);
     arr.clear();
   }
@@ -83,11 +82,13 @@ public class ClientHandler {
     if (requestValidateAnswer) {
       String fileName = arrOfMethods[1];
       int statusCode = handleRequest(arrOfMethods, fileName);
-      serverHandlingResponse(output, statusCode, fileHandler, arr, fileName, HttpMethod.valueOf(arrOfMethods[0]));
+      serverHandlingResponse(output, statusCode, fileHandler, arr, fileName, HttpMethod.valueOf(arrOfMethods[0]),
+          requestBody);
     } else {
       int statusCode = 400;
       String fileName = "";
-      serverHandlingResponse(output, statusCode, fileHandler, arr, fileName, HttpMethod.valueOf(arrOfMethods[0]));
+      serverHandlingResponse(output, statusCode, fileHandler, arr, fileName, HttpMethod.valueOf(arrOfMethods[0]),
+          requestBody);
     }
   }
 
@@ -140,11 +141,13 @@ public class ClientHandler {
       HttpMethod method = HttpMethod.valueOf(arrayOfMethods[0]);
       BiFunction<HttpMethod, String, Integer> handler = (m, nameOfFile) -> {
         switch (m) {
-          case GET, POST:
+          case GET:
             boolean fileExistOrNot = fileHandler.fileExistOrNot(nameOfFile);
             if (fileExistOrNot)
               return 200;
             return 404;
+          case POST:
+            return 201;
           case DELETE, PUT, PATCH:
             return 405;
           default:
@@ -173,22 +176,23 @@ public class ClientHandler {
   // httpValue.clear();
   // }
 
-  public void methodHandling(HttpMethod method) {
+  public void methodHandling(PrintWriter writer,HttpMethod method, FileHandling fileOperation, String fileName, String requestBody) {
+    
     switch (method) {
       case GET:
-        requestRouter.handleGET();
+        requestRouter.handleGET(writer,fileOperation, fileName);
         break;
       case POST:
-        requestRouter.handlePOST();
+        requestRouter.handlePOST(writer,fileOperation, fileName, requestBody);
         break;
       case PUT:
-        requestRouter.handlePUT();
+        requestRouter.handlePUT(writer,fileOperation, fileName);
         break;
       case DELETE:
-        requestRouter.handleDELETE();
+        requestRouter.handleDELETE(writer,fileOperation, fileName);
         break;
       case PATCH:
-        requestRouter.handlePATCH();
+        requestRouter.handlePATCH(writer,fileOperation, fileName);
         break;
       default:
         break; /// this case will nevere happen due to the previous checking
@@ -196,34 +200,39 @@ public class ClientHandler {
   }
 
   public void serverHandlingResponse(PrintWriter output, int statusCode, FileHandling fileHandler, List<String> arr,
-      String fileName, HttpMethod method) {
+      String fileName, HttpMethod method, String requestBody) {
     String response = "";
     String body = "";
     String contentType = findContentType(fileName);
     parsingHeader(arr);
     switch (statusCode) {
       case 200 -> {
-        body = fileHandler.returnContentFromFile(fileName);
-        response = "OK";
+        methodHandling(output,method, fileHandler, fileName, requestBody);
         // serverOutput(output,fileHandler,fileName);
+      }
+      case 201 ->{
+        methodHandling(output,method, fileHandler, fileName, requestBody);
       }
       case 405 -> {
         body = "Method Not Allowed";
         response = body;
+        writeResponse(output, body, statusCode, response, contentType);
       }
       case 404 -> {
         body = "Not Found";
         response = body;
+        writeResponse(output, body, statusCode, response, contentType);
       }
       case 400 -> {
         body = "bad request";
         response = body;
+        writeResponse(output, body, statusCode, response, contentType);
       }
     }
-    writeResponse(output, body, statusCode, response, contentType);
+    
   }
 
-  public String findContentType(String fileName) {
+  public static String findContentType(String fileName) {
     int dotIndex = fileName.lastIndexOf(".");
     if (dotIndex == -1) {
       return "application/octet-stream";
@@ -231,7 +240,7 @@ public class ClientHandler {
 
     String extension = fileName.substring(dotIndex).toLowerCase();
 
-    return mimeTypes.getOrDefault(
+    return MIME_TYPES.getOrDefault(
         extension,
         "application/octet-stream");
   }
